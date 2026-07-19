@@ -1,4 +1,4 @@
-" examples/games/numberguessinggame.vim
+" games/numberguessinggame.vim
 " A simple number guessing game to practice Vimscript logic.
 " Run :source numberguessinggame.vim and then type :GuessNumber
 
