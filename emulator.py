@@ -1,15 +1,21 @@
+"""
+Website Emulator Server Module.
+Provides a local HTTP development server designed to emulate responsive devices
+and serve HTML files from the workspace directory.
+"""
+
 import http.server
 import socketserver
 import sys
 import os
 import socket
 
-PORT = 8000
+PORT = 8000  # pylint: disable=invalid-name
 DIRECTORY = "."
 
 if len(sys.argv) > 1:
     try:
-        PORT = int(sys.argv[1])
+        PORT = int(sys.argv[1])  # pylint: disable=invalid-name
     except ValueError:
         pass
 
@@ -326,6 +332,10 @@ EMULATOR_HTML = """<!DOCTYPE html>
 """
 
 class EmulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """
+    HTTP request handler that intercepts emulator page requests
+    and falls back to standard file serving for other resources.
+    """
     def do_GET(self):
         # Serve the emulator page when /__emulator__ is requested
         if self.path == '/__emulator__' or self.path.startswith('/__emulator__?'):
@@ -338,10 +348,16 @@ class EmulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
             super().do_GET()
 
 def is_port_in_use(port):
+    """
+    Checks if the specified port is already open/in use on localhost.
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
 def run():
+    """
+    Initializes and runs the emulator TCPServer on the configured port.
+    """
     if is_port_in_use(PORT):
         print(f"Port {PORT} is already in use. Assuming server is already running.")
         return
@@ -353,7 +369,7 @@ def run():
             print(f"Serving Website Emulator at http://localhost:{PORT}/__emulator__")
             print(f"Local files served from {os.getcwd()}")
             httpd.serve_forever()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Error starting server: {e}")
 
 if __name__ == '__main__':
