@@ -26,7 +26,7 @@ An optimized, zero-dependency environment configuration matrix designed to turn 
 ## Deployment Instructions
 
 ### 1. Installation
-Ensure native Vim is installed on your machine. Clone this profile asset direct to your environment workspace:
+Ensure native Vim is installed on your machine. Clone this profile asset direct to your environment workspace or download zip:
 
 ```cmd
 git clone https://github.com/aidasofialily-cmd/vim-for-developers.git
