@@ -210,3 +210,50 @@ endfunction
 " Map Space Bar + w to launch the Website Emulator
 " No trailing comments on mapping to prevent parser issues
 nnoremap <leader>w :call LaunchWebsiteEmulator()<CR>
+
+" ==============================================================================
+" AUTO-COMPLETE AS YOU TYPE
+" ==============================================================================
+
+" Configure completion options for non-disruptive, IDE-like autocomplete.
+" Sourced from current buffer, other windows, loaded buffers, and unloaded buffers.
+set complete=.,w,b,u
+
+" Configure popup behavior.
+" menuone: show popup even if there's only one match.
+" noselect: do not select the first match automatically (prevents typing disruption).
+" noinsert: do not insert any text until selected.
+set completeopt=menu,menuone,noselect,noinsert
+
+" Prevent completion messages from cluttering the command line.
+set shortmess+=c
+
+" Core Autocomplete function triggered on TextChangedI.
+function! TriggerAutocomplete()
+    " Do not trigger in special buffers, if paste mode is on, or if popup is visible.
+    if &buftype != '' || &paste || pumvisible()
+        return
+    endif
+
+    " Get the line text up to the cursor.
+    let l:col = col('.')
+    let l:line = getline('.')
+    let l:context = strpart(l:line, 0, l:col - 1)
+
+    " Trigger completion if the word before the cursor has at least 2 keyword characters.
+    if l:context =~# '\k\{2,}$'
+        call feedkeys("\<C-n>", 'n')
+    endif
+endfunction
+
+" Map Tab / Shift-Tab and CR to work smoothly with the completion popup.
+" No inline comments on mapping commands to avoid parser issues.
+inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<CR>"
+
+" Autocommand group to trigger autocompletion as you type.
+augroup AutocompleteGroup
+    autocmd!
+    autocmd TextChangedI * call TriggerAutocomplete()
+augroup END

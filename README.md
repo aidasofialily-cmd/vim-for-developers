@@ -27,6 +27,12 @@ An optimized, zero-dependency environment configuration matrix designed to turn 
 - `<Space> + l + n`: Jump to the next location error or problem.
 - `<Space> + l + p`: Jump to the previous location error or problem.
 
+### 4. Automatic Autocomplete as You Type
+- Trigger: The popup menu opens automatically after typing 2 or more word-like characters (as you type).
+- `<Tab>`: Cycle forward through completion matches when the popup is visible.
+- `<Shift> + <Tab>`: Cycle backward through completion matches.
+- `<Enter>`: Accept the selected match (using `<C-y>`) without inserting a newline.
+
 ## Deployment Instructions
 
 ### 1. Installation
