@@ -13,4 +13,4 @@ An optimized, zero-dependency environment configuration matrix designed to turn 
 Ensure native Vim is installed on your machine. Clone this profile asset direct to your environment workspace:
 
 ```cmd
-git clone [https://github.com/aidasofialily-cmd/vim-for-developers.git](https://github.com/aidasofialily-cmd/vim-for-developers.git)
+git clone https://github.com/aidasofialily-cmd/vim-for-developers.git
