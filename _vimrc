@@ -60,3 +60,34 @@ endfunction
 " Triggers file creation sequence in normal mode using: Space Bar + n
 let mapleader = " "
 nnoremap <leader>n :call CreateNewFile()<CR>
+
+" ==============================================================================
+" CODE ERRORS AND PROBLEMS (QUICKFIX WORKFLOW)
+" ==============================================================================
+
+" Auto-open quickfix window after running :make or external compiler/linter commands
+" only if there are actual code errors or problems detected.
+autocmd QuickFixCmdPost [^l]* nested cwindow
+autocmd QuickFixCmdPost    l* nested lwindow
+
+" Key Mappings for Quickfix Navigation:
+" Easily open, close, and navigate through syntax/compiler errors and problems.
+" Open the quickfix window to view all errors and problems
+nnoremap <leader>co :copen<CR>
+" Close the quickfix window
+nnoremap <leader>cc :cclose<CR>
+" Jump to the next code error or problem
+nnoremap <leader>cn :cnext<CR>
+" Jump to the previous code error or problem
+nnoremap <leader>cp :cprevious<CR>
+
+" Key Mappings for Location List Navigation:
+" Easily open, close, and navigate through window-local errors and problems.
+" Open the location list window
+nnoremap <leader>lo :lopen<CR>
+" Close the location list window
+nnoremap <leader>lc :lclose<CR>
+" Jump to the next location error or problem
+nnoremap <leader>ln :lnext<CR>
+" Jump to the previous location error or problem
+nnoremap <leader>lp :lprevious<CR>
