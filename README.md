@@ -7,13 +7,17 @@ An optimized, zero-dependency environment configuration matrix designed to turn 
 - **Dynamic File Generation**: Features an integrated file automation routine that creates subdirectories and buffers simultaneously without jumping to a Windows shell command prompt.
 - **Clean Formatting Rules**: Pre-configured indentation matrices map structural space metrics across your programming languages.
 - **Code Errors and Problems**: Leverages Vim's native quickfix and location list pipelines with dedicated hotkeys to automatically compile, list, and navigate code compilation or linting errors and problems.
+- **Website Emulator**: Injects a viewport-responsive preview framework served via local HTTP, resolving local resource paths and CORS barriers while allowing the selection of physical device dimensions, color themes, and quick reloads.
 
 ## Key Mappings Reference
 
 ### 1. New File Creation
 - `<Space> + n`: Triggers the interactive path/filename prompt to create and load a new file.
 
-### 2. Code Errors and Problems Navigation
+### 2. Website Emulator
+- `<Space> + w`: Launches the interactive Website Emulator for the current HTML file, starting a background web server and opening the preview in your default browser with multi-device viewport emulation, orientation toggle, and dark mode features.
+
+### 3. Code Errors and Problems Navigation
 - `<Space> + c + o`: Open the quickfix window to view all code errors and problems.
 - `<Space> + c + c`: Close the quickfix window.
 - `<Space> + c + n`: Jump to the next code error or problem.
