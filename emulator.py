@@ -5,10 +5,11 @@ and serve HTML files from the workspace directory.
 """
 
 import http.server
-import socketserver
-import sys
+import json
 import os
 import socket
+import socketserver
+import sys
 
 PORT = 8000  # pylint: disable=invalid-name
 DIRECTORY = "."
@@ -106,6 +107,42 @@ EMULATOR_HTML = """<!DOCTYPE html>
             border-color: #007acc;
             background-color: #3b3b3b;
         }
+        /* Autocomplete styles */
+        .autocomplete-container {
+            position: relative;
+            display: inline-block;
+        }
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #444444;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #262626;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        .autocomplete-items div {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #333333;
+            font-size: 0.85rem;
+            color: #cccccc;
+            text-align: left;
+        }
+        .autocomplete-items div:hover {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .autocomplete-active {
+            background-color: #007acc !important;
+            color: #ffffff !important;
+        }
         /* Main Workspace */
         .workspace {
             flex: 1;
@@ -182,7 +219,10 @@ EMULATOR_HTML = """<!DOCTYPE html>
         </div>
 
         <div class="controls-section">
-            <input type="text" id="url-bar" value="" placeholder="Enter filename (e.g., index.html)">
+            <div class="autocomplete-container">
+                <input type="text" id="url-bar" value="" placeholder="Enter filename (e.g., index.html)">
+                <div id="autocomplete-list" class="autocomplete-items"></div>
+            </div>
             <button class="btn-primary" onclick="navigateUrl()">Go</button>
             <button onclick="reloadFrame()">Reload</button>
 
@@ -324,12 +364,141 @@ EMULATOR_HTML = """<!DOCTYPE html>
             }
         }
 
+        // Autocomplete JS logic
+        let availableFiles = [];
+        let currentFocus = -1;
+
+        // Fetch available files from endpoint on load
+        async function fetchAvailableFiles() {
+            try {
+                const response = await fetch('/__emulator_files__');
+                if (response.ok) {
+                    availableFiles = await response.json();
+                }
+            } catch (err) {
+                console.error('Failed to fetch workspace files for autocomplete:', err);
+            }
+        }
+
+        // Initialize fetching
+        fetchAvailableFiles();
+
+        urlBar.addEventListener('input', function() {
+            const val = this.value;
+            closeAllLists();
+            if (!val) { return false; }
+            currentFocus = -1;
+
+            const listContainer = document.getElementById('autocomplete-list');
+            const lowerVal = val.toLowerCase();
+
+            // Find matching files
+            const matches = availableFiles.filter(file => file.toLowerCase().includes(lowerVal));
+
+            matches.forEach(file => {
+                const itemDiv = document.createElement('div');
+                // Highlight the matching substring
+                const index = file.toLowerCase().indexOf(lowerVal);
+                if (index >= 0) {
+                    const part1 = file.substring(0, index);
+                    const part2 = file.substring(index, index + val.length);
+                    const part3 = file.substring(index + val.length);
+                    itemDiv.innerHTML = `${part1}<strong>${part2}</strong>${part3}`;
+                } else {
+                    itemDiv.textContent = file;
+                }
+
+                itemDiv.addEventListener('click', function() {
+                    urlBar.value = file;
+                    closeAllLists();
+                    navigateUrl();
+                });
+
+                listContainer.appendChild(itemDiv);
+            });
+            return true;
+        });
+
+        // Add keyboard support
+        urlBar.addEventListener('keydown', function(e) {
+            const listContainer = document.getElementById('autocomplete-list');
+            let items = [];
+            if (listContainer) {
+                items = listContainer.getElementsByTagName('div');
+            }
+
+            if (e.key === 'ArrowDown') {
+                currentFocus++;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.key === 'ArrowUp') {
+                currentFocus--;
+                addActive(items);
+                e.preventDefault();
+            } else if (e.key === 'Enter') {
+                if (currentFocus > -1 && items.length > 0) {
+                    e.preventDefault();
+                    items[currentFocus].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeAllLists();
+            }
+        });
+
+        function addActive(items) {
+            if (!items || items.length === 0) return false;
+            removeActive(items);
+            if (currentFocus >= items.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = items.length - 1;
+            items[currentFocus].classList.add('autocomplete-active');
+            items[currentFocus].scrollIntoView({ block: 'nearest' });
+            return true;
+        }
+
+        function removeActive(items) {
+            for (let i = 0; i < items.length; i++) {
+                items[i].classList.remove('autocomplete-active');
+            }
+        }
+
+        function closeAllLists(elmnt) {
+            const listContainer = document.getElementById('autocomplete-list');
+            if (listContainer) {
+                listContainer.innerHTML = '';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== urlBar) {
+                closeAllLists();
+            }
+        });
+
         // Initialize view
         applyDimensions();
     </script>
 </body>
 </html>
 """
+
+def get_workspace_files():
+    """
+    Recursively scans the current directory and returns relative paths
+    for all non-hidden files, ignoring hidden directories (like .git).
+    """
+    files_found = []
+    for root, dirs, files in os.walk('.'):
+        # Prune hidden directories in-place
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        for file in files:
+            if not file.startswith('.'):
+                rel_path = os.path.relpath(os.path.join(root, file), '.')
+                # Convert windows path separator to slash
+                rel_path = rel_path.replace('\\', '/')
+                files_found.append(rel_path)
+    return sorted(files_found)
+
 
 class EmulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
     """
@@ -343,6 +512,12 @@ class EmulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
             self.wfile.write(EMULATOR_HTML.encode('utf-8'))
+        elif self.path == '/__emulator_files__':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            files = get_workspace_files()
+            self.wfile.write(json.dumps(files).encode('utf-8'))
         else:
             # Fall back to standard file server
             super().do_GET()
