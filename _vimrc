@@ -91,3 +91,122 @@ nnoremap <leader>lc :lclose<CR>
 nnoremap <leader>ln :lnext<CR>
 " Jump to the previous location error or problem
 nnoremap <leader>lp :lprevious<CR>
+
+" ==============================================================================
+" WEBSITE EMULATOR FOR HTML FILES
+" ==============================================================================
+
+" Store configuration directory path during script execution
+let s:config_dir = expand('<sfile>:p:h')
+
+" Default emulator port (can be overridden in user settings)
+if !exists('g:emulator_port')
+    let g:emulator_port = 8000
+endif
+
+" Helper: Open URL in the system's default browser
+function! OpenURL(url)
+    if has('win32unix') && executable('cygstart')
+        call system('cygstart ' . shellescape(a:url))
+    elseif has('unix') && executable('xdg-open')
+        call system('xdg-open ' . shellescape(a:url) . ' &')
+    elseif (has('win32') || has('win64')) && executable('cmd')
+        silent execute '!start ' . a:url
+    elseif (has('macunix') || has('unix') && system('uname') =~ 'Darwin') && executable('open')
+        call system('open ' . shellescape(a:url))
+    else
+        echo "Please open in browser: " . a:url
+    endif
+endfunction
+
+" Function: LaunchWebsiteEmulator
+" Purpose: Starts a local HTTP server in the project root and loads the active
+"          HTML page inside the viewport-emulating wrapper.
+function! LaunchWebsiteEmulator()
+    " Save current file if it has been modified
+    if &modified
+        silent update
+    endif
+
+    " Determine active file path and filename
+    let l:full_path = expand('%:p')
+    let l:filename = expand('%:t')
+    let l:ext = expand('%:e')
+
+    " Check if python is available
+    let l:python_cmd = ''
+    if executable('python3')
+        let l:python_cmd = 'python3'
+    elseif executable('python')
+        let l:python_cmd = 'python'
+    else
+        echoerr "[ERROR] Python is required to run the Website Emulator."
+        return
+    endif
+
+    " Locate workspace root by traversing upwards for .git or _vimrc markers
+    let l:root_dir = ''
+    let l:root_marker = finddir('.git', '.;')
+    if l:root_marker == ''
+        let l:root_marker = findfile('_vimrc', '.;')
+    endif
+
+    if l:root_marker != ''
+        let l:root_dir = fnamemodify(l:root_marker, ':p:h')
+    else
+        let l:root_dir = expand('%:p:h')
+    endif
+
+    " Fallback if l:root_dir is empty or current buffer is empty
+    if l:root_dir == ''
+        let l:root_dir = getcwd()
+    endif
+
+    " Calculate relative path of active file to workspace root
+    let l:sep = '/'
+    if has('win32') || has('win64')
+        let l:sep = '\'
+    endif
+
+    let l:root_prefix = l:root_dir
+    if l:root_prefix[-1:] != l:sep
+        let l:root_prefix .= l:sep
+    endif
+
+    let l:rel_path = 'index.html'
+    if l:full_path != '' && stridx(l:full_path, l:root_prefix) == 0
+        let l:rel_path = strpart(l:full_path, len(l:root_prefix))
+        let l:rel_path = substitute(l:rel_path, '\\', '/', 'g')
+    elseif l:filename != ''
+        let l:rel_path = l:filename
+    endif
+
+    " Define absolute path to emulator script
+    let l:emulator_script = s:config_dir . '/emulator.py'
+
+    " Ensure emulator script actually exists
+    if !filereadable(l:emulator_script)
+        echoerr "[ERROR] Website Emulator script not found at: " . l:emulator_script
+        return
+    endif
+
+    " Spawn Python background server process serving the workspace root
+    if has('win32') || has('win64')
+        let l:cmd = 'start "" /min ' . l:python_cmd . ' ' . shellescape(l:emulator_script) . ' ' . g:emulator_port . ' ' . shellescape(l:root_dir)
+        silent execute '!' . l:cmd
+    else
+        let l:cmd = l:python_cmd . ' ' . shellescape(l:emulator_script) . ' ' . g:emulator_port . ' ' . shellescape(l:root_dir) . ' > /dev/null 2>&1 &'
+        silent execute '!' . l:cmd
+    endif
+
+    " Build target emulator URL
+    let l:url = 'http://localhost:' . g:emulator_port . '/__emulator__?page=' . l:rel_path
+
+    " Launch URL in browser
+    echo "Launching Website Emulator..."
+    call OpenURL(l:url)
+endfunction
+
+" Map Space Bar + w to launch the Website Emulator
+" No trailing comments on mapping to prevent parser issues
+nnoremap <leader>w :call LaunchWebsiteEmulator()<CR>
