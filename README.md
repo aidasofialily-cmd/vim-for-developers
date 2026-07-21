@@ -1,3 +1,5 @@
+[![Pylint](https://github.com/aidasofialily-cmd/vim-for-developers/actions/workflows/pylint.yml/badge.svg)](https://github.com/aidasofialily-cmd/vim-for-developers/actions/workflows/pylint.yml)
+
 # Vim for Developers - Windows 10 Environment
 
 An optimized, zero-dependency environment configuration matrix designed to turn standard Vim on Windows 10 into a rapid development workspace. 
