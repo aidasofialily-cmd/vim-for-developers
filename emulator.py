@@ -545,6 +545,7 @@ def run():
             print(f"Local files served from {os.getcwd()}")
             httpd.serve_forever()
     except Exception as e:  # pylint: disable=broad-exception-caught
+        print("Error starting emulator, Please check code for errors.")
         print(f"Error starting server: {e}")
 
 if __name__ == '__main__':
